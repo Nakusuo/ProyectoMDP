@@ -1,12 +1,10 @@
 package com.proyecto.mdp.servlets;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.proyecto.mdp.dao.DocumentoDAO;
-import com.proyecto.mdp.dao.DocumentoDAOImpl;
-import com.proyecto.mdp.model.Documento;
-import com.proyecto.mdp.model.Usuario;
-import com.proyecto.mdp.utils.LocalDateTimeAdapter;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -14,11 +12,14 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.proyecto.mdp.dao.DocumentoDAO;
+import com.proyecto.mdp.dao.DocumentoDAOImpl;
+import com.proyecto.mdp.model.Documento;
+import com.proyecto.mdp.model.Usuario;
+import com.proyecto.mdp.utils.LocalDateTimeAdapter;
 
 @WebServlet("/api/documentos")
 public class DocumentoServlet extends HttpServlet {

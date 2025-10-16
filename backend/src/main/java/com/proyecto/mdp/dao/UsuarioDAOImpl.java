@@ -4,16 +4,20 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.proyecto.mdp.model.Usuario;
 import com.proyecto.mdp.utils.ConexionDB;
 
 public class UsuarioDAOImpl implements UsuarioDAO {
 
+    // 1. Se crea una instancia del Logger para esta clase.
+    private static final Logger LOGGER = Logger.getLogger(UsuarioDAOImpl.class.getName());
+
     @Override
     public Usuario login(String username, String password) {
         Usuario usuario = null;
-        // La consulta SQL usa la misma función de hash que tu script de BD
         String sql = "SELECT ID_usuario, nombre, apellido, email, username, avatarUrl " +
                      "FROM usuarios WHERE username = ? AND password_hash = SHA2(?, 256) AND activo = TRUE";
 
@@ -35,7 +39,9 @@ public class UsuarioDAOImpl implements UsuarioDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace(); // En una app real, usarías un logger
+            // 2. Se reemplaza e.printStackTrace() con el Logger.
+            // Esto registra el error de forma estructurada sin ensuciar la consola.
+            LOGGER.log(Level.SEVERE, "Error al intentar validar el usuario: " + username, e);
         }
         return usuario;
     }

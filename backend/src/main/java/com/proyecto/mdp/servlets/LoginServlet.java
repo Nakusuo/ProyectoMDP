@@ -14,16 +14,14 @@ import javax.servlet.http.HttpSession;
 
 import com.google.gson.Gson;
 import com.proyecto.mdp.dao.UsuarioDAO;
-import com.proyecto.mdp.dao.UsuarioDAOImpl; // <-- 1. Importar Level
-import com.proyecto.mdp.model.Usuario; // <-- 2. Importar Logger
+import com.proyecto.mdp.dao.UsuarioDAOImpl;
+import com.proyecto.mdp.model.Usuario;
 
 @WebServlet("/api/login")
 public class LoginServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
-    
-    // 3. Crear una instancia estática del Logger
     private static final Logger LOGGER = Logger.getLogger(LoginServlet.class.getName());
-    
+
     private UsuarioDAO usuarioDAO;
     private Gson gson;
 
@@ -32,19 +30,25 @@ public class LoginServlet extends HttpServlet {
         usuarioDAO = new UsuarioDAOImpl();
         gson = new Gson();
     }
+    
+    // Método para configurar CORS y no repetir código
+    private void setupCORS(HttpServletResponse response) {
+        response.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
+        response.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+        response.setHeader("Access-Control-Allow-Headers", "Content-Type");
+        response.setHeader("Access-Control-Allow-Credentials", "true");
+    }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // ... (el resto del código del método doPost se mantiene igual) ...
-
+        setupCORS(response); // Habilitar CORS para la petición
+        
         String username = request.getParameter("username");
         String password = request.getParameter("password");
 
         try {
             Usuario usuario = usuarioDAO.login(username, password);
-            // ... (la lógica del if/else para el usuario se mantiene igual) ...
-            
-            // --- CÓDIGO SIN CAMBIOS ---
+
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
             PrintWriter out = response.getWriter();
@@ -61,16 +65,18 @@ public class LoginServlet extends HttpServlet {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             }
             out.flush();
-            // --- FIN CÓDIGO SIN CAMBIOS ---
 
         } catch (Exception e) {
-            // 4. Reemplazar e.printStackTrace() con el Logger
             LOGGER.log(Level.SEVERE, "Error en el servlet de login para el usuario: " + username, e);
-            
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             response.getWriter().write("{\"status\": \"error\", \"message\": \"Error interno en el servidor\"}");
         }
     }
     
-    // ... (el método doOptions se mantiene igual) ...
+    // El método doOptions es necesario para que CORS funcione correctamente
+    @Override
+    protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        setupCORS(resp);
+        resp.setStatus(HttpServletResponse.SC_OK);
+    }
 }
