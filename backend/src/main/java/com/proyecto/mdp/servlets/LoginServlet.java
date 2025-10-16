@@ -1,64 +1,76 @@
 package com.proyecto.mdp.servlets;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Type;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
+import com.proyecto.mdp.dao.UsuarioDAO;
+import com.proyecto.mdp.dao.UsuarioDAOImpl; // <-- 1. Importar Level
+import com.proyecto.mdp.model.Usuario; // <-- 2. Importar Logger
 
+@WebServlet("/api/login")
 public class LoginServlet extends HttpServlet {
+    private static final long serialVersionUID = 1L;
+    
+    // 3. Crear una instancia estática del Logger
+    private static final Logger LOGGER = Logger.getLogger(LoginServlet.class.getName());
+    
+    private UsuarioDAO usuarioDAO;
+    private Gson gson;
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    public void init() {
+        usuarioDAO = new UsuarioDAOImpl();
+        gson = new Gson();
+    }
 
-        // Configurar la respuesta
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // ... (el resto del código del método doPost se mantiene igual) ...
 
-        // Leer el cuerpo JSON del request
-        StringBuilder jsonBuilder = new StringBuilder();
-        try (BufferedReader reader = request.getReader()) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                jsonBuilder.append(line);
+        String username = request.getParameter("username");
+        String password = request.getParameter("password");
+
+        try {
+            Usuario usuario = usuarioDAO.login(username, password);
+            // ... (la lógica del if/else para el usuario se mantiene igual) ...
+            
+            // --- CÓDIGO SIN CAMBIOS ---
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            PrintWriter out = response.getWriter();
+
+            if (usuario != null) {
+                HttpSession session = request.getSession(true);
+                session.setAttribute("usuario", usuario);
+
+                String usuarioJson = gson.toJson(usuario);
+                out.print("{\"status\": \"success\", \"user\": " + usuarioJson + "}");
+                response.setStatus(HttpServletResponse.SC_OK);
+            } else {
+                out.print("{\"status\": \"error\", \"message\": \"Credenciales incorrectas\"}");
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             }
-        }
+            out.flush();
+            // --- FIN CÓDIGO SIN CAMBIOS ---
 
-        String jsonString = jsonBuilder.toString();
-        Gson gson = new Gson();
-
-        // Evita el warning genérico al usar HashMap.class
-        Type mapType = new TypeToken<Map<String, String>>() {}.getType();
-        Map<String, String> data = gson.fromJson(jsonString, mapType);
-
-        String username = data.get("username");
-        String password = data.get("password");
-
-        // Crear la respuesta
-        Map<String, Object> result = new HashMap<>();
-
-        if ("admin".equals(username) && "1234".equals(password)) {
-            result.put("success", true);
-            result.put("message", "Login exitoso");
-        } else {
-            result.put("success", false);
-            result.put("message", "Usuario o contraseña incorrectos");
-        }
-
-        // Enviar JSON al cliente
-        String jsonResponse = gson.toJson(result);
-        try (PrintWriter out = response.getWriter()) {
-            out.print(jsonResponse);
+        } catch (Exception e) {
+            // 4. Reemplazar e.printStackTrace() con el Logger
+            LOGGER.log(Level.SEVERE, "Error en el servlet de login para el usuario: " + username, e);
+            
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.getWriter().write("{\"status\": \"error\", \"message\": \"Error interno en el servidor\"}");
         }
     }
+    
+    // ... (el método doOptions se mantiene igual) ...
 }
