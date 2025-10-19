@@ -1,27 +1,26 @@
 package com.proyecto.mdp.dao;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import com.proyecto.mdp.model.Usuario;
+import com.proyecto.mdp.utils.ConexionBD;
+
+import java.sql.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.proyecto.mdp.model.Usuario;
-import com.proyecto.mdp.utils.ConexionDB;
-
-public class UsuarioDAOImpl implements UsuarioDAO {
-
-    // 1. Se crea una instancia del Logger para esta clase.
+public class UsuarioDAOImpl {
     private static final Logger LOGGER = Logger.getLogger(UsuarioDAOImpl.class.getName());
 
-    @Override
     public Usuario login(String username, String password) {
         Usuario usuario = null;
-        String sql = "SELECT ID_usuario, nombre, apellido, email, username, avatarUrl " +
-                     "FROM usuarios WHERE username = ? AND password_hash = SHA2(?, 256) AND activo = TRUE";
+        String sql = """
+            SELECT u.id_usuario, u.nombre, u.apellido, u.email, u.username,
+                   u.avatarUrl, r.nombre AS rol_nombre
+            FROM usuarios u
+            JOIN roles r ON u.id_rol = r.id_rol
+            WHERE u.username = ? AND u.password_hash = SHA2(?, 256) AND u.activo = TRUE
+        """;
 
-        try (Connection conn = ConexionDB.getConnection();
+        try (Connection conn = ConexionBD.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, username);
@@ -30,19 +29,27 @@ public class UsuarioDAOImpl implements UsuarioDAO {
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     usuario = new Usuario();
-                    usuario.setId(rs.getInt("ID_usuario"));
+                    usuario.setId(rs.getInt("id_usuario"));
                     usuario.setNombre(rs.getString("nombre"));
                     usuario.setApellido(rs.getString("apellido"));
                     usuario.setEmail(rs.getString("email"));
                     usuario.setUsername(rs.getString("username"));
-                    usuario.setAvatarUrl(rs.getString("avatarUrl"));
+
+                    // Verifica si existe avatarUrl
+                    try {
+                        usuario.setAvatarUrl(rs.getString("avatarUrl"));
+                    } catch (SQLException e) {
+                        usuario.setAvatarUrl(null);
+                    }
+
+                    usuario.setRol(rs.getString("rol_nombre"));
                 }
             }
+
         } catch (SQLException e) {
-            // 2. Se reemplaza e.printStackTrace() con el Logger.
-            // Esto registra el error de forma estructurada sin ensuciar la consola.
-            LOGGER.log(Level.SEVERE, "Error al intentar validar el usuario: " + username, e);
+            LOGGER.log(Level.SEVERE, "Error al validar usuario: " + username, e);
         }
+
         return usuario;
     }
 }

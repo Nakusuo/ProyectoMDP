@@ -1,17 +1,12 @@
 package com.proyecto.mdp.dao;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.*;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.proyecto.mdp.model.Documento;
-import com.proyecto.mdp.utils.ConexionDB;
+import com.proyecto.mdp.utils.ConexionBD;
 
 public class DocumentoDAOImpl implements DocumentoDAO {
     private static final Logger LOGGER = Logger.getLogger(DocumentoDAOImpl.class.getName());
@@ -19,10 +14,12 @@ public class DocumentoDAOImpl implements DocumentoDAO {
     @Override
     public List<Documento> obtenerTodos() {
         List<Documento> documentos = new ArrayList<>();
-        String sql = "SELECT ID_documento, codigo, titulo, descripcion, estado, remitente, fecha_ingreso " +
-                     "FROM documentos ORDER BY fecha_ingreso DESC";
+        String sql = """
+            SELECT ID_documento, codigo, titulo, descripcion, estado, remitente, fecha_ingreso
+            FROM documentos ORDER BY fecha_ingreso DESC
+        """;
 
-        try (Connection conn = ConexionDB.getConnection();
+        try (Connection conn = ConexionBD.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
 
@@ -45,21 +42,22 @@ public class DocumentoDAOImpl implements DocumentoDAO {
 
     @Override
     public void registrarDocumento(Documento documento) {
-        String sql = "INSERT INTO documentos (codigo, titulo, descripcion, remitente, fecha_ingreso, ID_usuario_registro, estado) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, 'Registrado')";
-        
-        try (Connection conn = ConexionDB.getConnection();
+        String sql = """
+            INSERT INTO documentos (codigo, titulo, descripcion, remitente, fecha_ingreso, ID_usuario_registro, estado)
+            VALUES (?, ?, ?, ?, ?, ?, 'Registrado')
+        """;
+
+        try (Connection conn = ConexionBD.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
+
             pstmt.setString(1, documento.getCodigo());
             pstmt.setString(2, documento.getTitulo());
             pstmt.setString(3, documento.getDescripcion());
             pstmt.setString(4, documento.getRemitente());
             pstmt.setTimestamp(5, Timestamp.valueOf(documento.getFechaIngreso()));
             pstmt.setInt(6, documento.getIdUsuarioRegistro());
-            
-            pstmt.executeUpdate();
 
+            pstmt.executeUpdate();
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Error al registrar el documento", e);
         }
